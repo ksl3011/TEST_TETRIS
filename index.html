@@ -11,39 +11,68 @@
 
   <main>
     <div class="hero">
+
+      <!-- ── 타이틀 ──────────────────────────────────────── -->
       <h1 class="title">TETRIS</h1>
       <p class="tagline">클래식 블록 퍼즐 게임</p>
 
+      <!-- ── 피처 뱃지 (한 줄) ──────────────────────────── -->
       <div class="features">
-        <div class="feature-card">
-          <span class="feature-icon">🎮</span>
-          <span class="feature-label">직관적인 조작</span>
-          <span class="feature-desc">방향키만으로 즐기세요</span>
-        </div>
-        <div class="feature-card">
-          <span class="feature-icon">🏆</span>
-          <span class="feature-label">점수 시스템</span>
-          <span class="feature-desc">줄 완성으로 점수 획득</span>
-        </div>
-        <div class="feature-card">
-          <span class="feature-icon">🎵</span>
-          <span class="feature-label">레트로 BGM</span>
-          <span class="feature-desc">Web Audio API 사운드</span>
-        </div>
+        <span class="feature-pill">🎮 직관적인 조작</span>
+        <span class="feature-pill">🏆 점수 시스템</span>
+        <span class="feature-pill">🎵 레트로 BGM</span>
       </div>
 
+      <!-- ── 플레이 버튼 ──────────────────────────────────── -->
       <a href="game.html" class="play-btn">▶ PLAY NOW</a>
 
-      <div class="controls-hint">
-        <span><kbd>←</kbd> <kbd>→</kbd> 이동</span>
-        <span><kbd>↑</kbd> 회전 (CW)</span>
-        <span><kbd>Z</kbd> 역회전 (CCW)</span>
-        <span><kbd>↓</kbd> 한 칸 낙하</span>
-        <span><kbd>Space</kbd> 즉시 낙하</span>
-      </div>
-    </div>
+      <!-- ── 하단 2열: 랭킹 | 인증 ──────────────────────── -->
+      <div class="bottom-grid">
+
+        <!-- 랭킹 카드 -->
+        <div class="ranking-card">
+          <div class="ranking-header">
+            <span class="ranking-title-text">🏆 글로벌 랭킹 TOP 10</span>
+            <button id="lnd-refresh-btn" class="ranking-refresh" title="새로고침">↻</button>
+          </div>
+          <div id="lnd-ranking-list">
+            <p class="ranking-status">불러오는 중…</p>
+          </div>
+        </div>
+
+        <!-- 인증 카드 -->
+        <div class="auth-card" id="landing-auth-section">
+          <div id="lnd-logged-in" hidden>
+            <p class="lnd-greeting">✓ <span id="lnd-email"></span></p>
+            <button id="lnd-logout-btn" class="lnd-btn-sub">로그아웃</button>
+          </div>
+          <div id="lnd-form-wrap">
+            <div class="lnd-form-header">
+              <span id="lnd-form-title" class="lnd-form-title-text">로그인</span>
+              <button id="lnd-toggle-btn" class="lnd-toggle">회원가입하기 →</button>
+            </div>
+            <input id="lnd-email-input"    type="email"    placeholder="이메일" autocomplete="email">
+            <input id="lnd-password-input" type="password" placeholder="비밀번호 (6자 이상)" autocomplete="current-password">
+            <p id="lnd-error" class="lnd-error"></p>
+            <button id="lnd-submit-btn" class="lnd-btn-primary">로그인</button>
+          </div>
+
+          <!-- 컨트롤 힌트 (인증 카드 하단) -->
+          <div class="controls-hint">
+            <span><kbd>←</kbd><kbd>→</kbd> 이동</span>
+            <span><kbd>↑</kbd>/<kbd>Z</kbd> 회전</span>
+            <span><kbd>↓</kbd> 낙하</span>
+            <span><kbd>Space</kbd> 즉시</span>
+            <span><kbd>C</kbd> 홀드</span>
+          </div>
+        </div>
+
+      </div><!-- /.bottom-grid -->
+
+    </div><!-- /.hero -->
   </main>
 
+  <script src="api.js"></script>
   <script src="landing.js"></script>
 </body>
 </html>

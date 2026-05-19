@@ -69,3 +69,100 @@ function draw() {
 window.addEventListener('resize', resize);
 init();
 draw();
+
+// ── Landing Ranking ────────────────────────────────────────
+(function () {
+  const listEl   = document.getElementById('lnd-ranking-list');
+  const refreshBtn = document.getElementById('lnd-refresh-btn');
+  const MEDALS   = ['🥇', '🥈', '🥉'];
+
+  async function loadRankings() {
+    listEl.innerHTML = '<p class="ranking-status">불러오는 중…</p>';
+    refreshBtn.classList.add('spinning');
+    try {
+      const tops = await TetrisAPI.getTopScores(10);
+      if (!tops.length) {
+        listEl.innerHTML = '<p class="ranking-status">아직 기록이 없습니다</p>';
+        return;
+      }
+      listEl.innerHTML = tops.map((entry, i) => {
+        const rank    = i + 1;
+        const medal   = MEDALS[i] || rank;
+        const cls     = i < 3 ? ` medal-${rank}` : '';
+        const email   = entry.email.length > 24
+          ? entry.email.slice(0, 22) + '…' : entry.email;
+        return `<div class="rank-row${cls}">
+          <span class="rank-num">${medal}</span>
+          <span class="rank-email">${email}</span>
+          <span class="rank-score">${entry.score.toLocaleString()}</span>
+        </div>`;
+      }).join('');
+    } catch {
+      listEl.innerHTML = '<p class="ranking-status">서버에 연결할 수 없습니다</p>';
+    } finally {
+      refreshBtn.classList.remove('spinning');
+    }
+  }
+
+  refreshBtn.addEventListener('click', loadRankings);
+  loadRankings();
+})();
+
+// ── Landing Auth ───────────────────────────────────────────
+(function () {
+  const loggedInEl  = document.getElementById('lnd-logged-in');
+  const formWrap    = document.getElementById('lnd-form-wrap');
+  const emailInput  = document.getElementById('lnd-email-input');
+  const passInput   = document.getElementById('lnd-password-input');
+  const errorEl     = document.getElementById('lnd-error');
+  const submitBtn   = document.getElementById('lnd-submit-btn');
+  const toggleBtn   = document.getElementById('lnd-toggle-btn');
+  const titleEl     = document.getElementById('lnd-form-title');
+  const emailDisplay= document.getElementById('lnd-email');
+  const logoutBtn   = document.getElementById('lnd-logout-btn');
+
+  let mode = 'login'; // 'login' | 'register'
+
+  function setMode(m) {
+    mode = m;
+    titleEl.textContent   = m === 'login' ? '로그인' : '회원가입';
+    submitBtn.textContent = m === 'login' ? '로그인' : '가입하기';
+    toggleBtn.textContent = m === 'login' ? '회원가입하기 →' : '← 로그인으로';
+    errorEl.textContent   = '';
+  }
+
+  function updateUI() {
+    const loggedIn = TetrisAPI.isLoggedIn();
+    loggedInEl.hidden = !loggedIn;
+    formWrap.hidden   = loggedIn;
+    if (loggedIn) emailDisplay.textContent = TetrisAPI.getUser().email;
+  }
+
+  async function handleSubmit() {
+    const email    = emailInput.value.trim();
+    const password = passInput.value;
+    errorEl.textContent = '';
+    submitBtn.disabled = true;
+    try {
+      if (mode === 'register') {
+        await TetrisAPI.register(email, password);
+        await TetrisAPI.login(email, password);
+      } else {
+        await TetrisAPI.login(email, password);
+      }
+      updateUI();
+    } catch (e) {
+      errorEl.textContent = e.message;
+    } finally {
+      submitBtn.disabled = false;
+    }
+  }
+
+  toggleBtn.addEventListener('click', () => setMode(mode === 'login' ? 'register' : 'login'));
+  submitBtn.addEventListener('click', handleSubmit);
+  logoutBtn.addEventListener('click', () => { TetrisAPI.logout(); updateUI(); });
+  emailInput.addEventListener('keydown', e => { if (e.key === 'Enter') passInput.focus(); });
+  passInput.addEventListener('keydown',  e => { if (e.key === 'Enter') handleSubmit(); });
+
+  updateUI();
+})();

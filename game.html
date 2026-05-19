@@ -7,29 +7,89 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+
+  <!-- ── 인증 모달 ──────────────────────────────────────── -->
+  <div id="auth-modal" class="modal-overlay" hidden>
+    <div class="modal">
+      <button id="modal-close" class="modal-close">✕</button>
+      <h2 id="modal-title">로그인</h2>
+      <input id="auth-email"    type="email"    placeholder="이메일" autocomplete="email">
+      <input id="auth-password" type="password" placeholder="비밀번호 (6자 이상)" autocomplete="current-password">
+      <p id="auth-error" class="auth-error"></p>
+      <button id="auth-submit" class="auth-submit-btn">로그인</button>
+      <button id="auth-toggle" class="auth-toggle-btn">회원가입하기 →</button>
+      <button id="auth-skip-btn" class="auth-skip-btn" hidden>비로그인으로 게임 시작 →</button>
+    </div>
+  </div>
+
+  <!-- ── 게임 레이아웃 (좌 패널 | 보드 | 우 패널) ────────── -->
   <div id="app">
+
+    <!-- ── 왼쪽 패널 ──────────────────────────────────── -->
+    <div class="panel" id="panel-left">
+      <!-- 홀드 블록 -->
+      <div class="box">
+        <div class="label">Hold <span class="hold-hint">C/Shift</span></div>
+        <canvas id="hold-canvas" width="100" height="100"></canvas>
+      </div>
+
+      <!-- 인증 -->
+      <div class="box" id="auth-box">
+        <div id="auth-logged-out">
+          <button id="login-open-btn" class="auth-panel-btn">🔐 LOGIN</button>
+        </div>
+        <div id="auth-logged-in" hidden>
+          <div class="label">로그인 중</div>
+          <div id="user-email-display" class="user-email"></div>
+          <button id="logout-btn" class="logout-btn">로그아웃</button>
+        </div>
+      </div>
+
+      <!-- 컨트롤 힌트 -->
+      <div class="controls">
+        <kbd>←</kbd><kbd>→</kbd> 이동<br>
+        <kbd>↑</kbd> 회전 (CW)<br>
+        <kbd>Z</kbd> 역회전<br>
+        <kbd>↓</kbd> 소프트 낙하<br>
+        <kbd>Space</kbd> 즉시 낙하<br>
+        <kbd>C</kbd>/<kbd>⇧</kbd> 홀드<br>
+        <kbd>Enter</kbd> 시작
+      </div>
+
+      <a href="index.html" class="home-link">← 홈으로</a>
+    </div>
+
+    <!-- ── 보드 ──────────────────────────────────────── -->
     <canvas id="board" width="300" height="600"></canvas>
-    <div id="panel">
+
+    <!-- ── 오른쪽 패널 ─────────────────────────────── -->
+    <div class="panel" id="panel-right">
+      <!-- 점수 -->
       <div class="box">
         <div class="label">Score</div>
         <div id="score-val">0</div>
       </div>
+
+      <!-- 글로벌 최고 점수 -->
+      <div class="box">
+        <div class="label">Global Best</div>
+        <div id="global-best">—</div>
+        <div id="global-best-user" class="sub-label"></div>
+      </div>
+
+      <!-- 다음 블록 -->
       <div class="box">
         <div class="label">Next</div>
         <canvas id="next-canvas" width="100" height="100"></canvas>
       </div>
+
       <button id="start-btn">START</button>
       <button id="mute-btn">🔊</button>
-      <div class="controls">
-        <kbd>←</kbd> <kbd>→</kbd> 이동<br>
-        <kbd>↑</kbd> 회전 (CW)<br>
-        <kbd>Z</kbd> 역회전 (CCW)<br>
-        <kbd>↓</kbd> 한 칸 낙하<br>
-        <kbd>Space</kbd> 즉시 낙하
-      </div>
-      <a href="index.html" class="home-link">← 홈으로</a>
     </div>
+
   </div>
+
+  <script src="api.js"></script>
   <script src="tetris.js"></script>
 </body>
 </html>
