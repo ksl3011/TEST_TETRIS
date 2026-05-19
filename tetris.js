@@ -26,6 +26,13 @@ const PIECES = [
 
 const SCORE_TABLE = [0, 100, 300, 500, 800];
 
+// spin bonus score [0 lines, 1 line, 2 lines, 3 lines]
+const SPIN_SCORE = {
+  'T-SPIN': [400, 800, 1200, 1600],
+  'J-SPIN': [0,   300, 600,  900],
+  'L-SPIN': [0,   300, 600,  900],
+};
+
 // ── Audio (Web Audio API — Tetris Theme A / Korobeiniki) ───
 const NOTE_FREQ = {
   A4: 440.00, B4: 493.88,
@@ -34,9 +41,8 @@ const NOTE_FREQ = {
 };
 
 const BPM = 150;
-const BEAT = 60 / BPM; // quarter-note duration in seconds
+const BEAT = 60 / BPM;
 
-// [note, beats]  1=quarter  0.5=eighth  1.5=dotted-quarter  2=half
 const MELODY = [
   // Phrase 1
   ['E5', 1], ['B4', .5], ['C5', .5], ['D5', 1], ['C5', .5], ['B4', .5],
@@ -62,7 +68,7 @@ function initAudio() {
   masterGain.gain.value = 0.28;
   loopFilter = audioCtx.createBiquadFilter();
   loopFilter.type = 'lowpass';
-  loopFilter.frequency.value = 1800; // soften harsh square-wave harmonics
+  loopFilter.frequency.value = 1800;
   masterGain.connect(loopFilter);
   loopFilter.connect(audioCtx.destination);
   scheduleBgmLoop();
@@ -83,7 +89,6 @@ function playNote(freq, startTime, duration) {
 
 function scheduleBgmLoop() {
   if (bgmMuted || !audioCtx) return;
-  // align next loop start so there is no gap/overlap
   const start = Math.max(audioCtx.currentTime + 0.05, nextLoopAt);
   nextLoopAt = start + TOTAL_DURATION;
   let t = start;
@@ -92,7 +97,6 @@ function scheduleBgmLoop() {
     if (NOTE_FREQ[note]) playNote(NOTE_FREQ[note], t, dur);
     t += dur;
   });
-  // re-schedule ~0.1 s before this loop ends for seamless looping
   bgmTimer = setTimeout(scheduleBgmLoop, (nextLoopAt - audioCtx.currentTime - 0.1) * 1000);
 }
 
@@ -105,7 +109,7 @@ function toggleMute() {
   } else {
     if (masterGain) {
       masterGain.gain.value = 0.28;
-      nextLoopAt = 0; // restart from top of melody
+      nextLoopAt = 0;
       scheduleBgmLoop();
     }
   }
@@ -124,6 +128,8 @@ const muteBtn  = document.getElementById('mute-btn');
 let board, piece, nextPiece, score;
 let running = false, animId = null;
 let dropCounter = 0, lastTime = 0;
+let lastActionWasRotation = false;
+let spinLabel = '', spinLabelTimer = 0;
 
 // ── Board ──────────────────────────────────────────────────
 function createBoard() {
@@ -135,6 +141,7 @@ function randomPiece() {
   const type = Math.floor(Math.random() * 7) + 1;
   const matrix = PIECES[type].map(r => [...r]);
   return {
+    type,
     matrix,
     pos: { x: Math.floor(COLS / 2) - Math.floor(matrix[0].length / 2), y: 0 },
   };
@@ -149,7 +156,20 @@ function rotate(matrix) {
   return result;
 }
 
+function rotateCCW(matrix) {
+  const R = matrix.length, C = matrix[0].length;
+  const result = Array.from({ length: C }, () => Array(R).fill(0));
+  for (let r = 0; r < R; r++)
+    for (let c = 0; c < C; c++)
+      result[C - 1 - c][r] = matrix[r][c];
+  return result;
+}
+
 // ── Collision ──────────────────────────────────────────────
+function isOccupied(c, r) {
+  return c < 0 || c >= COLS || r < 0 || r >= ROWS || (r >= 0 && board[r][c]);
+}
+
 function collides(p) {
   for (let r = 0; r < p.matrix.length; r++)
     for (let c = 0; c < p.matrix[r].length; c++)
@@ -159,6 +179,49 @@ function collides(p) {
         if (nr >= 0 && board[nr][nc]) return true;
       }
   return false;
+}
+
+// ── Ghost piece ────────────────────────────────────────────
+function getGhostY() {
+  let gy = piece.pos.y;
+  while (!collides({ matrix: piece.matrix, pos: { x: piece.pos.x, y: gy + 1 } })) gy++;
+  return gy;
+}
+
+function drawGhost() {
+  const gy = getGhostY();
+  if (gy === piece.pos.y) return; // already at rest
+  piece.matrix.forEach((row, r) =>
+    row.forEach((val, c) => {
+      if (!val) return;
+      const px = (piece.pos.x + c) * CELL + 2;
+      const py = (gy + r) * CELL + 2;
+      const s = CELL - 4;
+      ctx.strokeStyle = COLORS[piece.type];
+      ctx.lineWidth = 1.5;
+      ctx.globalAlpha = 0.35;
+      ctx.strokeRect(px, py, s, s);
+      ctx.globalAlpha = 1;
+    })
+  );
+}
+
+// ── Spin detection ─────────────────────────────────────────
+function checkSpin() {
+  if (!lastActionWasRotation) return null;
+  const { type, matrix, pos } = piece;
+  if (type !== 3 && type !== 6 && type !== 7) return null; // T, J, L only
+
+  const rows = matrix.length, cols = matrix[0].length;
+  const corners = [[0, 0], [cols - 1, 0], [0, rows - 1], [cols - 1, rows - 1]];
+  const occupied = corners.filter(([dc, dr]) => isOccupied(pos.x + dc, pos.y + dr)).length;
+
+  if (occupied >= 3) {
+    if (type === 3) return 'T-SPIN';
+    if (type === 6) return 'J-SPIN';
+    if (type === 7) return 'L-SPIN';
+  }
+  return null;
 }
 
 // ── Actions ────────────────────────────────────────────────
@@ -184,6 +247,23 @@ function clearLines() {
   return count;
 }
 
+function lockAndScore() {
+  const spin = checkSpin();
+  merge();
+  const lines = clearLines();
+  if (spin && SPIN_SCORE[spin]) {
+    score += SPIN_SCORE[spin][Math.min(lines, 3)];
+    spinLabel = spin + (lines ? ` ×${lines}` : '');
+    spinLabelTimer = 90; // frames to show label
+  } else {
+    score += SCORE_TABLE[Math.min(lines, 4)];
+    if (lines >= 4) { spinLabel = 'TETRIS!'; spinLabelTimer = 90; }
+    else { spinLabel = ''; }
+  }
+  scoreEl.textContent = score;
+  lastActionWasRotation = false;
+}
+
 function spawnPiece() {
   piece = nextPiece;
   nextPiece = randomPiece();
@@ -196,13 +276,11 @@ function spawnPiece() {
 }
 
 function drop() {
+  lastActionWasRotation = false;
   piece.pos.y++;
   if (collides(piece)) {
     piece.pos.y--;
-    merge();
-    const lines = clearLines();
-    score += SCORE_TABLE[Math.min(lines, 4)];
-    scoreEl.textContent = score;
+    lockAndScore();
     spawnPiece();
   }
   dropCounter = 0;
@@ -211,29 +289,29 @@ function drop() {
 function moveLeft()  { piece.pos.x--; if (collides(piece)) piece.pos.x++; }
 function moveRight() { piece.pos.x++; if (collides(piece)) piece.pos.x--; }
 
-function hardDrop() {
-  while (true) {
-    piece.pos.y++;
-    if (collides(piece)) { piece.pos.y--; break; }
-  }
-  merge();
-  const lines = clearLines();
-  score += SCORE_TABLE[Math.min(lines, 4)];
-  scoreEl.textContent = score;
-  dropCounter = 0;
-  spawnPiece();
-}
-
-function rotatePiece() {
+function applyRotation(newMatrix) {
   const orig = piece.matrix;
-  piece.matrix = rotate(piece.matrix);
-  if (!collides(piece)) return;
+  piece.matrix = newMatrix;
+  if (!collides(piece)) { lastActionWasRotation = true; return; }
   for (const offset of [-1, 1, -2, 2]) {
     piece.pos.x += offset;
-    if (!collides(piece)) return;
+    if (!collides(piece)) { lastActionWasRotation = true; return; }
     piece.pos.x -= offset;
   }
-  piece.matrix = orig;
+  piece.matrix = orig; // rotation failed
+}
+
+function rotatePiece()    { applyRotation(rotate(piece.matrix)); }
+function rotatePieceCCW() { applyRotation(rotateCCW(piece.matrix)); }
+
+function hardDrop() {
+  lastActionWasRotation = false;
+  while (!collides({ matrix: piece.matrix, pos: { x: piece.pos.x, y: piece.pos.y + 1 } })) {
+    piece.pos.y++;
+  }
+  lockAndScore();
+  dropCounter = 0;
+  spawnPiece();
 }
 
 // ── Draw ───────────────────────────────────────────────────
@@ -264,11 +342,23 @@ function drawBoard() {
   );
 
   if (piece) {
+    drawGhost();
     piece.matrix.forEach((row, r) =>
       row.forEach((val, c) => {
         if (val) drawCell(ctx, piece.pos.x + c, piece.pos.y + r, COLORS[val], CELL);
       })
     );
+  }
+
+  // spin / tetris label
+  if (spinLabel && spinLabelTimer > 0) {
+    const alpha = Math.min(1, spinLabelTimer / 30);
+    ctx.globalAlpha = alpha;
+    ctx.textAlign = 'center';
+    ctx.font = 'bold 20px Segoe UI';
+    ctx.fillStyle = '#f0e040';
+    ctx.fillText(spinLabel, canvas.width / 2, 40);
+    ctx.globalAlpha = 1;
   }
 }
 
@@ -321,6 +411,7 @@ function gameLoop(time = 0) {
   lastTime = time;
   dropCounter += delta;
   if (dropCounter >= DROP_INTERVAL) drop();
+  spinLabelTimer = Math.max(0, spinLabelTimer - 1);
   if (running) {
     drawBoard();
     drawNext();
@@ -331,13 +422,16 @@ function gameLoop(time = 0) {
 // ── Start ──────────────────────────────────────────────────
 function startGame() {
   if (animId) cancelAnimationFrame(animId);
-  initAudio(); // requires user gesture — safe to call here
+  initAudio();
   board = createBoard();
   score = 0;
   scoreEl.textContent = '0';
   running = true;
   dropCounter = 0;
   lastTime = 0;
+  lastActionWasRotation = false;
+  spinLabel = '';
+  spinLabelTimer = 0;
   piece = randomPiece();
   nextPiece = randomPiece();
   startBtn.textContent = 'RESTART';
@@ -351,7 +445,8 @@ document.addEventListener('keydown', e => {
     case 'ArrowLeft':  moveLeft();    break;
     case 'ArrowRight': moveRight();   break;
     case 'ArrowDown':  drop();        break;
-    case 'ArrowUp':    rotatePiece(); break;
+    case 'ArrowUp':    rotatePiece();    break;
+    case 'z': case 'Z': rotatePieceCCW(); break;
     case ' ':          hardDrop();    break;
     default: return;
   }
