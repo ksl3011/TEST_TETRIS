@@ -1,0 +1,135 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: #08080f;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  color: #eee;
+  overflow: hidden;
+}
+
+/* ── Background Canvas ────────────────────────────────── */
+#bg-canvas {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── Main Content ─────────────────────────────────────── */
+main {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 560px;
+  padding: 40px 24px;
+}
+
+.hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+  text-align: center;
+}
+
+/* ── Title ────────────────────────────────────────────── */
+.title {
+  font-size: clamp(64px, 15vw, 96px);
+  font-weight: 900;
+  letter-spacing: 12px;
+  background: linear-gradient(135deg, #aa00ff 0%, #00e5ff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: none;
+  line-height: 1;
+  filter: drop-shadow(0 0 40px rgba(170, 0, 255, 0.4));
+}
+
+.tagline {
+  font-size: 16px;
+  color: #666;
+  letter-spacing: 2px;
+  margin-top: -16px;
+}
+
+/* ── Feature Cards ────────────────────────────────────── */
+.features {
+  display: flex;
+  gap: 14px;
+  width: 100%;
+  justify-content: center;
+}
+
+.feature-card {
+  flex: 1;
+  max-width: 150px;
+  background: rgba(22, 33, 62, 0.7);
+  border: 1px solid #2a2a4a;
+  border-radius: 12px;
+  padding: 18px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  backdrop-filter: blur(8px);
+}
+
+.feature-icon { font-size: 28px; }
+
+.feature-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #ccc;
+  letter-spacing: 0.5px;
+}
+
+.feature-desc {
+  font-size: 11px;
+  color: #555;
+  line-height: 1.4;
+}
+
+/* ── Play Button ──────────────────────────────────────── */
+.play-btn {
+  display: inline-block;
+  background: linear-gradient(135deg, #7c3aed, #00bcd4);
+  color: #fff;
+  text-decoration: none;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 4px;
+  padding: 16px 52px;
+  border-radius: 50px;
+  transition: transform 0.15s, filter 0.15s;
+  filter: drop-shadow(0 0 20px rgba(124, 58, 237, 0.5));
+}
+
+.play-btn:hover {
+  transform: scale(1.06);
+  filter: drop-shadow(0 0 32px rgba(124, 58, 237, 0.8));
+}
+
+.play-btn:active { transform: scale(0.98); }
+
+/* ── Controls Hint ────────────────────────────────────── */
+.controls-hint {
+  display: flex;
+  gap: 20px;
+  font-size: 12px;
+  color: #444;
+}
+
+.controls-hint kbd {
+  color: #777;
+  background: #1a1a2e;
+  border: 1px solid #2a2a4a;
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-family: inherit;
+  font-size: 12px;
+}

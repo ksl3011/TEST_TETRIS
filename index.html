@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tetris — 클래식 블록 퍼즐</title>
+  <link rel="stylesheet" href="landing.css">
+</head>
+<body>
+  <canvas id="bg-canvas"></canvas>
+
+  <main>
+    <div class="hero">
+      <h1 class="title">TETRIS</h1>
+      <p class="tagline">클래식 블록 퍼즐 게임</p>
+
+      <div class="features">
+        <div class="feature-card">
+          <span class="feature-icon">🎮</span>
+          <span class="feature-label">직관적인 조작</span>
+          <span class="feature-desc">방향키만으로 즐기세요</span>
+        </div>
+        <div class="feature-card">
+          <span class="feature-icon">🏆</span>
+          <span class="feature-label">점수 시스템</span>
+          <span class="feature-desc">줄 완성으로 점수 획득</span>
+        </div>
+        <div class="feature-card">
+          <span class="feature-icon">🎵</span>
+          <span class="feature-label">레트로 BGM</span>
+          <span class="feature-desc">Web Audio API 사운드</span>
+        </div>
+      </div>
+
+      <a href="game.html" class="play-btn">▶ PLAY NOW</a>
+
+      <div class="controls-hint">
+        <span><kbd>←</kbd> <kbd>→</kbd> 이동</span>
+        <span><kbd>↑</kbd> 회전</span>
+        <span><kbd>↓</kbd> 한 칸 낙하</span>
+        <span><kbd>Space</kbd> 즉시 낙하</span>
+      </div>
+    </div>
+  </main>
+
+  <script src="landing.js"></script>
+</body>
+</html>
